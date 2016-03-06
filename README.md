@@ -5,7 +5,7 @@ domains registered with [register.it](https://register.it).
 
 ##Dependencies
 This scripts depends on **Python 3**, and the python packages listed in the
-`requirements.txt`. This also needs **phantomjs**.
+`requirements.txt`. This also needs **phantomJS**.
 
 ##Configuration
 Copy the example.ini to default.ini and fill in the necessary details.
