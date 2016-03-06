@@ -33,7 +33,8 @@ class DNSChallengeHook:
             config.read(config_path)
             self.username   = config["Login"]["Username"]
             self.password   = config["Login"]["Password"]
-            self.driver = webdriver.Firefox()
+            self.driver = webdriver.PhantomJS()
+            self.driver.implicitly_wait(3)
         else:
             print("Please provide a configuration file named '" + config_path + "'.")
             exit(1)
