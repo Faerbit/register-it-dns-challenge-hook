@@ -7,8 +7,10 @@ import logging
 import time
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support import expected_conditions
 from bs4 import BeautifulSoup
 from tld import get_tld
 import dns.exception
@@ -107,7 +109,25 @@ class DNSChallengeHook:
         while(self._has_dns_propagated() == False):
             print("DNS not propagated, waiting 30s...")
             time.sleep(30)
+        print("DNS propagated.")
 
+    def _clean_challenge(self):
+        """Deletes the challenge token."""
+        print("clean_challenge: Deleting TXT record...")
+
+        self._login()
+
+        self._get_dns_form()
+        css_class_name = self.domain.replace(".", "_")
+        css_class_name += "_"
+        (self.driver.find_element_by_class_name(css_class_name)
+                .find_element_by_class_name("record_delete").click())
+        self._continue()
+        # Explicit wait after continue dialog
+        time.sleep(1)
+        self._submit_dns_form()
+        self.driver.close()
+        print("TXT record deleted.")
 
     def _wait_for_element_with_id(self, element_id):
         """Explicitly waits for an element."""
