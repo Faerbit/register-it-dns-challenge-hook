@@ -19,7 +19,9 @@ which the TXT record should be attached. The last parameter is the value for
 the TXT record(only when deploying the challenge)
 
 Example:
-    ./hook.py deploy_challenge _acme-challenge.domain.it SECRET-VALUE
+```
+./hook.py deploy_challenge _acme-challenge.domain.it SECRET-VALUE
+```
 
 ##License
 This code is licensed under the MIT License. See LICENSE.md for more details.
