@@ -31,6 +31,7 @@ class DNSChallengeHook:
             config.read(config_path)
             self.username   = config["Login"]["Username"]
             self.password   = config["Login"]["Password"]
+            self.driver = webdriver.Firefox()
         else:
             print("Please provide a configuration file named '" + config_path + "'.")
             exit(1)
@@ -39,63 +40,74 @@ class DNSChallengeHook:
         if (len(args) > 0 and args[0] == "deploy_challenge"):
             self.domain = args[1]
             self.token = args[2]
-            self.deploy_challenge()
+            self._deploy_challenge()
         elif (len(args) > 0 and args[1] == "clean_challenge"):
-            self.clean_challenge()
             self.domain = args[1]
+            self._clean_challenge()
         else:
             print("This hook only works with 'deploy_challenge' and 'clean_challenge'")
             exit(1)
 
-    def deploy_challenge(self, args):
+    def _login(self):
+        """Logs the user in."""
+        self.driver.get("https://controlpanel.register.it/index.html?chglng=eng")
+
+        # login
+        self._wait_for_element_with_id("hd_loginbox")
+        self.driver.find_element_by_id("hd_loginbox").click()
+        self.driver.find_element_by_name("userName").send_keys(self.username)
+        self.driver.find_element_by_name("password").send_keys(self.password)
+        self.driver.find_element_by_name("password").send_keys(Keys.RETURN)
+        self._wait_for_element_with_id("nav")
+
+    def _get_dns_form(self):
+        """Navigates to the DNS configuration form."""
+        base_url = "https://controlpanel.register.it/"
+        self.driver.get(base_url + "firstLevel/view.html?domain=" + get_tld("http://" + self.domain))
+        self._wait_for_element_with_id("webapp_domain")
+
+        self.driver.get(base_url + "domains/dnsAdvanced.html")
+        self._wait_for_element_with_id("backToApps")
+
+    def _submit_dns_form(self):
+        """Submits the changes on the DNS configuration form."""
+        self.driver.find_element_by_class_name("submit").click()
+        self.driver.find_element_by_xpath("//*[contains(text(), 'Continue')]").click()
+
+    def _deploy_challenge(self):
         """Deploys the challenge token as a TXT record."""
         print("deploy_challenge: Registering new TXT record...")
 
-        driver = webdriver.Firefox()
-        driver.get("https://controlpanel.register.it/index.html?chglng=eng")
+        self._login()
 
-        # login
-        self._wait_for_element_with_id(driver, "hd_loginbox")
-        driver.find_element_by_id("hd_loginbox").click()
-        driver.find_element_by_name("userName").send_keys(self.username)
-        driver.find_element_by_name("password").send_keys(self.password)
-        driver.find_element_by_name("password").send_keys(Keys.RETURN)
-        self._wait_for_element_with_id(driver, "nav")
+        self._get_dns_form()
 
-        base_url = "https://controlpanel.register.it/"
-
-
-        driver.get(base_url + "firstLevel/view.html?domain=" + get_tld("http://" + self.domain))
-        self._wait_for_element_with_id(driver, "webapp_domain")
-        driver.get(base_url + "domains/dnsAdvanced.html")
-        self._wait_for_element_with_id(driver, "backToApps")
-        driver.find_element_by_class_name("add").click()
-        dns_soup = BeautifulSoup(driver.page_source, "html.parser")
+        self.driver.find_element_by_class_name("add").click()
+        dns_soup = BeautifulSoup(self.driver.page_source, "html.parser")
         dns_entries = len(dns_soup.find("table", class_="dinamicList")
                 .find_all("tr", class_="rMain"))
         new_dns_entry = dns_entries - 1 # zero based indexing
-        driver.find_element_by_name("recordName_"
+        self.driver.find_element_by_name("recordName_"
                 + str(new_dns_entry)).send_keys(self.domain)
-        driver.find_element_by_name("recordTTL_"
+        self.driver.find_element_by_name("recordTTL_"
                 + str(new_dns_entry)).send_keys("900")
-        select = Select(driver.find_element_by_name("recordType_"
+        select = Select(self.driver.find_element_by_name("recordType_"
                 + str(new_dns_entry)))
         select.select_by_value("TXT")
-        driver.find_element_by_name("recordValue_"
+        self.driver.find_element_by_name("recordValue_"
                 + str(new_dns_entry)).send_keys(self.token)
-        driver.find_element_by_class_name("submit").click()
-        driver.find_element_by_xpath("//*[contains(text(), 'Continue')]").click()
-        driver.close()
+        self._submit_dns_form()
+        self.driver.close()
         print("TXT record registered...")
         print("Checking if DNS has propagated...")
-        while(self._has_dns_propagated(self.domain, token) == False):
+        while(self._has_dns_propagated() == False):
             print("DNS not propagated, waiting 30s...")
             time.sleep(30)
 
 
-    def _wait_for_element_with_id(self, driver, element_id):
+    def _wait_for_element_with_id(self, element_id):
         """Explicitly waits for an element."""
-        WebDriverWait(driver, timeout=10).until(
+        WebDriverWait(self.driver, timeout=10).until(
             lambda b: b.find_element_by_id(element_id)
         )
 
