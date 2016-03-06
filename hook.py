@@ -54,11 +54,10 @@ class DNSChallengeHook:
         self.driver.get("https://controlpanel.register.it/index.html?chglng=eng")
 
         # login
-        self._wait_for_element_with_id("hd_loginbox")
-        self.driver.find_element_by_id("hd_loginbox").click()
-        self.driver.find_element_by_name("userName").send_keys(self.username)
-        self.driver.find_element_by_name("password").send_keys(self.password)
-        self.driver.find_element_by_name("password").send_keys(Keys.RETURN)
+        self._wait_for_element_with_id("userName")
+        self.driver.find_element_by_id("userName").send_keys(self.username)
+        self.driver.find_element_by_id("password").send_keys(self.password)
+        self.driver.find_element_by_id("password").send_keys(Keys.RETURN)
         self._wait_for_element_with_id("nav")
 
     def _get_dns_form(self):
