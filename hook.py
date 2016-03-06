@@ -72,7 +72,11 @@ class DNSChallengeHook:
     def _submit_dns_form(self):
         """Submits the changes on the DNS configuration form."""
         self.driver.find_element_by_class_name("submit").click()
-        self.driver.find_element_by_xpath("//*[contains(text(), 'Continue')]").click()
+        self._continue()
+
+    def _continue(self):
+        """Confirms the continue dialog."""
+        self.driver.find_element_by_xpath("//a[contains(text(), 'Continue')]").click()
 
     def _deploy_challenge(self):
         """Deploys the challenge token as a TXT record."""
