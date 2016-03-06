@@ -41,11 +41,12 @@ class DNSChallengeHook:
             self.domain = args[1]
             self.token = args[2]
             self._deploy_challenge()
-        elif (len(args) > 0 and args[1] == "clean_challenge"):
+        elif (len(args) > 0 and args[0] == "clean_challenge"):
             self.domain = args[1]
             self._clean_challenge()
         else:
             print("This hook only works with 'deploy_challenge' and 'clean_challenge'")
+            self.driver.close()
             exit(1)
 
     def _login(self):
